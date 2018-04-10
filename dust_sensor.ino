@@ -21,14 +21,6 @@ void loop() {
 
 
 
-
-
-
-
-
-
-
-
 int readPot(void){
   // This function is from Arduino Library
   // http://www.arduino.cc/en/Tutorial/AnalogInOutSerial
