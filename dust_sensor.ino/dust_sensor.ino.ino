@@ -11,14 +11,13 @@ int outputPot = 0;       // value output to the PWM (analog out)
 void setup() {
   // initialize serial communications at 9600 bps:
   Serial.begin(9600);
-
+  Serial1.begin(9600);
+  
 }
 
 void loop() {
-  // put your main code here, to run repeatedly:
   readPot();
 }
-
 
 
 int readPot(void){
