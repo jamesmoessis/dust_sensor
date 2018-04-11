@@ -1,18 +1,29 @@
-int read_adc();
+#include "Arduino.h"
+#include "./HPMA115S0/src/HPMA115S0.h"
 
-// These constants won't change. They're used to give names to the pins used:
-const int analogInPin = A0;  // Analog input pin that the potentiometer is attached to
-const int analogOutPin = 9; // Analog output pin that the LED is attached to
-
+#define BAUDRATE 9600;
+// These are used to give names to the pins used:
+const int analogInPin = A0;  // Potentiometer Analog ping
+const int analogOutPin = 9; 
 int sensorValue = 0;        // value read from the pot
-int outputValue = 0;        // value output to the PWM (analog out)
+int outputValue = 0;        // value output to the PWM
 
+int read_adc(); //definition
 
+//Create an instance of the HPMA115S0 library
+HPMA115S0 honeywell(Serial1);
 
 void setup() {
   // initialize serial communications at 9600 bps:
-  Serial.begin(9600);
-  Serial.println("Setup complete!");
+  Serial.begin(BAUDRATE); //begin adc comms
+  Serial1.begin(BAUDRATE);//begin honeywell comms
+  while (!Serial1) {
+    ; // wait for honeywell to connect
+  }
+  Serial.println("Starting...");
+  honeywell.Init();
+  honeywell.StartParticleMeasurement();
+  Serial.println("Setup func complete!");
 }
 
 
