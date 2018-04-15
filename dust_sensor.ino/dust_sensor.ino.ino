@@ -23,6 +23,7 @@ HPMA115S0 honeywell(Serial1);
 
 void setup() {
   // initialize serial communications at 9600 bps:
+<<<<<<< HEAD:dust_sensor.ino
   Serial.begin(BAUDRATE); // begin comms with USB (to Arduino Serial Monitor)
   Serial.println("Hello Computer.");
   Serial1.begin(BAUDRATE); //begin honeywell comms
@@ -33,10 +34,16 @@ void setup() {
   honeywell.Init();
   honeywell.StartParticleMeasurement();
   Serial.println("Setup func complete!");
+=======
+  Serial.begin(9600);
+  Serial1.begin(9600);
+  
+>>>>>>> master:dust_sensor.ino/dust_sensor.ino.ino
 }
 
 
 void loop() {
+<<<<<<< HEAD:dust_sensor.ino
     // threshold dust level out of 100
     threshold = read_adc() * 100.0f/255.0f;
     
@@ -51,6 +58,16 @@ void loop() {
 
 //adapted from example Arduino sketch
 int read_adc(){
+=======
+  readPot();
+}
+
+
+int readPot(void){
+  // This function is from Arduino Library
+  // http://www.arduino.cc/en/Tutorial/AnalogInOutSerial
+  
+>>>>>>> master:dust_sensor.ino/dust_sensor.ino.ino
   // read the analog in value:
   sensorValue = analogRead(analogInPin);
   // map it to the range of the analog out:
