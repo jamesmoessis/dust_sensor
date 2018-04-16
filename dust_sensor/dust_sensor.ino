@@ -8,6 +8,7 @@
 #include <hpma115S0.h>
 
 #define BAUDRATE 9600
+#define PIN 2
 
 // These are used to give names to the pins used:
 const int analogInPin = A0;  // Potentiometer Analog ping
@@ -15,59 +16,46 @@ const int analogOutPin = 9;
 int sensorValue = 0;        // value read from the pot
 int outputValue = 0;        // value output to the PWM
 float threshold;
-
-//int read_adc(); //definition
+int count = 0;
 
 //Create an instance of the HPMA115S0 library
 HPMA115S0 honeywell(Serial1);
 
 void setup() {
   // initialize serial communications at 9600 bps:
-<<<<<<< HEAD:dust_sensor.ino
+  pinMode(PIN, OUTPUT); //
   Serial.begin(BAUDRATE); // begin comms with USB (to Arduino Serial Monitor)
   Serial.println("Hello Computer.");
   Serial1.begin(BAUDRATE); //begin honeywell comms
   do {
-    delay(5000); // wait for honeywell to connect
     Serial.println("Starting Serial1...");
+    delay(5000); // wait for honeywell to connect
   } while (!Serial1);
   honeywell.Init();
   honeywell.StartParticleMeasurement();
   Serial.println("Setup func complete!");
-=======
-  Serial.begin(9600);
-  Serial1.begin(9600);
-  
->>>>>>> master:dust_sensor.ino/dust_sensor.ino.ino
 }
 
 
 void loop() {
-<<<<<<< HEAD:dust_sensor.ino
-    // threshold dust level out of 100
-    threshold = read_adc() * 100.0f/255.0f;
-    
     //honeywell read
     unsigned int pm2_5, pm10;
     if (honeywell.ReadParticleMeasurement(&pm2_5, &pm10)) {
     Serial.println("PM 2.5: " + String(pm2_5) + " ug/m3" );
     Serial.println("PM 10: " + String(pm10) + " ug/m3" );
+
+    //threshold dust level out of 100
+    threshold = read_adc() * (100.0f/255.0f);
+    if ((float)pm10 >= threshold) {
+      digitalWrite(PIN, HIGH);
+      delay(5000);
+      digitalWrite(PIN, LOW);
+    }
   }
-  
 }
 
 //adapted from example Arduino sketch
 int read_adc(){
-=======
-  readPot();
-}
-
-
-int readPot(void){
-  // This function is from Arduino Library
-  // http://www.arduino.cc/en/Tutorial/AnalogInOutSerial
-  
->>>>>>> master:dust_sensor.ino/dust_sensor.ino.ino
   // read the analog in value:
   sensorValue = analogRead(analogInPin);
   // map it to the range of the analog out:
