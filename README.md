@@ -6,7 +6,7 @@ Arduino Mega connected to a dust sensor which triggers output if adjustable dust
 
 ### On a hardware level
 
-* A potentiometer is to adjust acceptable dust level threshold. The Arduino's ADC reads the output of the Potentiometer, and the program uses it as a coefficient.
+* A potentiometer is used to adjust acceptable dust level threshold. The Arduino's ADC reads the output of the Potentiometer, and the program uses it as a coefficient.
 * A BJT is activated when averaged measurements exceed desired threshold level. This shorts an external input.
 * The BJT is in parallel with a LED to indicate when levels have been exceeded.
 * The dust levels are communicated by the Honeywell HPMA115S0 via UART protocol.
