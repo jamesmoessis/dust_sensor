@@ -12,7 +12,8 @@
 #include <TimeLib.h>
 
 #define BAUDRATE 9600
-#define PIN 2 // trigger pin
+#define BJT 2 // Low when threshold exceeded - PNP
+#define RED_LED 3 // High when threshold exceeded (LED)
 
 // GLOBALS
   time_t t;
@@ -51,6 +52,9 @@ void setup() {
     Serial.println("Starting Serial1...");
     delay(5000); // wait 5s for honeywell to connect
   } while (!Serial1);
+
+  //power control will be on pin 3, active low
+  
   honeywell.Init();
   honeywell.StartParticleMeasurement();
   Serial.println("Setup func complete!");
@@ -106,18 +110,20 @@ void loop() {
     Serial.println("Avg = " + String(average));     
     
     
-    //need to find out maximum of pm10 and make it out of 100
+    // Active LOW output to PNP BJT
+    // Red Light on
     if (average >= threshold) {
-      digitalWrite(PIN, HIGH);
+      digitalWrite(BJT, LOW);
+      digitalWrite(RED_LED, HIGH);
       delay(1);
       Serial.println("Threshold Exceeded");
     }
+    // Green light on
     else {
-      digitalWrite(PIN, LOW);
+      digitalWrite(BJT, HIGH);
+      digitalWrite(RED_LED, LOW);
       delay(1);
     }
-
-    
 }
 
 //adapted from example Arduino sketch
@@ -149,4 +155,5 @@ int read_adc(){
  * be altered, and memory efficiency should be tuned.
  * Additionally, the variables should be made local.
 *****************************************************/
+
 
