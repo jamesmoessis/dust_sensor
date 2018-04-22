@@ -2,6 +2,9 @@
  * @file dust_sensor.ino
  * @author James Moessis
  * @date April 2018
+ * 
+ * See Program notes at bottom.
+ * See README.md for more info.
  */
 
 #include "Arduino.h"
@@ -22,8 +25,8 @@
   float threshold;
   
   // Controlled by Dust Sensor
-  unsigned int sum = 0; // note: maxes at 65,535.       MAY NEED TO BE DOUBLE
-  unsigned short int circle[300]; // Dust measurements store    MAY NEED TO BE FLOAT
+  double sum = 0; // note: maxes at 65,535.
+  float circle[300]; // Dust measurements store
   size_t circle_size = sizeof(circle)/sizeof(circle[0]);
   unsigned int i; // index for circle
 
@@ -66,7 +69,7 @@ void loop() {
       circle[i] = pm10 * ( (float)100 / (float)1000 ); //problem here - circle not of type float
       Serial.println("circle[i] = " + String(circle[i]));
       Serial.println("i = " + String(i));
-      delay(100);
+      delay(10);
     }
     
     // Increment iterator
@@ -74,6 +77,10 @@ void loop() {
     if(i >= circle_size - 1) {
       i = 0;
       Serial.println("Resetting i!");
+      time_t lap_time = now() - t;
+      Serial.print("lap_time = ");
+      Serial.println(lap_time);
+      t = now();
     }
     else {
       i++;
@@ -81,19 +88,22 @@ void loop() {
 
     //read analog
     //threshold dust level out of 100
-    threshold = read_adc() * (100.0f/255.0f); //maybe convert this to the more accurate one!!
-    Serial1.println("Threshold = " + String(threshold));
+    threshold = read_adc() * ( (float)100 / (float)1023 );
+    Serial.println("Threshold = " + String(threshold));
 
     // Sum all recent measurements
     int k = 0;
     sum = 0;
     for(k = 0; k < circle_size; k++) {
       sum = sum + circle[k];
+      //sum = sum + (float)99.9; //test maxed values
     }
 
     // Average all recent measurements
     float average; 
-    average = ( (float)sum ) / ( (float)circle_size );      
+    average = ( (float)sum ) / ( (float)circle_size ); 
+    Serial.println("Sum = " + String(sum));
+    Serial.println("Avg = " + String(average));     
     
     
     //need to find out maximum of pm10 and make it out of 100
@@ -126,6 +136,17 @@ int read_adc(){
   // wait 2 milliseconds before the next loop for the analog-to-digital
   // converter to settle after the last reading:
   delay(2);
-  return outputValue;
+  return sensorValue;
 }
+
+/***************************************************
+ * Notes
+ * Currently the use of memory is quite inefficient.
+ * Floats are not necessarily needed, but were ok
+ * in the current case.
+ * 
+ * To scale this program to do more, delays should
+ * be altered, and memory efficiency should be tuned.
+ * Additionally, the variables should be made local.
+*****************************************************/
 
