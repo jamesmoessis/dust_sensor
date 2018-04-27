@@ -8,11 +8,15 @@
  */
 
 #include "Arduino.h"
-#include <hpma115S0.h>
-#include <TimeLib.h>
+#include <hpma115S0.h> // https://github.com/GoldenMoe/HPMA115S0
+#include <TimeLib.h>   // https://github.com/PaulStoffregen/Time
 
 #define BAUDRATE 9600
-#define PIN 2 // trigger pin
+#define FET 2 // Trigger threshold. MOSFET. Actives red LED
+#define GREEN_LED 3 // High when threshold note exceeded
+#define POWER_DUST 4 // pnp bjt powering HPMA
+// scale the threshold with this value. 
+#define SCALE 1.0 // to specify float must have decimal notation
 
 // GLOBALS
   time_t t;
@@ -35,8 +39,20 @@
 HPMA115S0 honeywell(Serial1);
 
 void setup() {
-  //t starts at 0 so dont need to record time
-  pinMode(PIN, OUTPUT);
+  
+  // initialize pins
+  pinMode(POWER_DUST, OUTPUT);
+  pinMode(FET, OUTPUT);
+  pinMode(GREEN_LED, OUTPUT);
+
+  digitalWrite(FET, LOW);
+  digitalWrite(GREEN_LED, HIGH);
+  
+  //power cycle dust sensor
+  digitalWrite(POWER_DUST, HIGH); 
+  delay(3000);
+  digitalWrite(POWER_DUST, LOW); 
+  
   Serial.begin(BAUDRATE);
   Serial.println("Hello Computer.");
   
@@ -51,6 +67,9 @@ void setup() {
     Serial.println("Starting Serial1...");
     delay(5000); // wait 5s for honeywell to connect
   } while (!Serial1);
+
+  //power control will be on pin 3, active low
+  
   honeywell.Init();
   honeywell.StartParticleMeasurement();
   Serial.println("Setup func complete!");
@@ -66,7 +85,7 @@ void loop() {
       Serial.println("PM 10: " + String(pm10) + " ug/m3" );
       
       // convert dust measurement to value out of 100
-      circle[i] = pm10 * ( (float)100 / (float)1000 ); //problem here - circle not of type float
+      circle[i] = pm10 * ( (float)100 / (float)1000 ); 
       Serial.println("circle[i] = " + String(circle[i]));
       Serial.println("i = " + String(i));
       delay(10);
@@ -106,18 +125,19 @@ void loop() {
     Serial.println("Avg = " + String(average));     
     
     
-    //need to find out maximum of pm10 and make it out of 100
-    if (average >= threshold) {
-      digitalWrite(PIN, HIGH);
+    // Red Light on
+    if (average >= SCALE * threshold) {
+      digitalWrite(GREEN_LED, LOW);
+      digitalWrite(FET, HIGH);
       delay(1);
       Serial.println("Threshold Exceeded");
     }
+    // Green light on
     else {
-      digitalWrite(PIN, LOW);
+      digitalWrite(GREEN_LED, HIGH);
+      digitalWrite(FET, LOW);
       delay(1);
     }
-
-    
 }
 
 //adapted from example Arduino sketch
@@ -147,6 +167,9 @@ int read_adc(){
  * 
  * To scale this program to do more, delays should
  * be altered, and memory efficiency should be tuned.
+ * The method in which circle[] is summed can be made
+ * more efficient through additional logic.
  * Additionally, the variables should be made local.
 *****************************************************/
+
 
