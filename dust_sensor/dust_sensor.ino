@@ -12,8 +12,9 @@
 #include <TimeLib.h>
 
 #define BAUDRATE 9600
-#define BJT 2 // Low when threshold exceeded - PNP
-#define RED_LED 3 // High when threshold exceeded (LED)
+#define BJT 2 // High when threshold exceeded - PNP
+#define RED_LED 3 // Low when threshold exceeded (LED)
+#define POWER_DUST 4
 
 // GLOBALS
   time_t t;
@@ -36,8 +37,17 @@
 HPMA115S0 honeywell(Serial1);
 
 void setup() {
+  
   //t starts at 0 so dont need to record time
-  pinMode(PIN, OUTPUT);
+  pinMode(POWER_DUST, OUTPUT);
+  pinMode(BJT, OUTPUT);
+  pinMode(RED_LED, OUTPUT);
+  
+  //power cycle dust sensor
+  digitalWrite(POWER_DUST, HIGH); 
+  delay(3000);
+  digitalWrite(POWER_DUST, LOW); 
+  
   Serial.begin(BAUDRATE);
   Serial.println("Hello Computer.");
   
