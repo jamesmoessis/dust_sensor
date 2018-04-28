@@ -27,7 +27,16 @@ Arduino Mega connected to a dust sensor which triggers output if adjustable dust
     4. If `average` exceeds `SCALE * threshold`, trigger output to PNP BJT. (Active LOW)
     5. Go back to step 1.
 
+## Monitoring
+Integration has been added with MegunoLink monitoring software.
+* The Arduino will output values through the USB and MegunoLink (Once set up properly on a port) will graph and log these values.
+* MegunoLink will generate a timestamped csv file and also create a graph against time. Every 300 particle measurements, the threshold and average level is sent. This is generally about every 1.5 minutes.
+* The MegunoLink file can be found in the repo as *.mlx file. This file will need to be edited from computer to computer.
+	
+	
 ## Remote Control
+
+Edit threshold by scaling it. Remotely edit the SCALE variable and then upload the new code.
 
 This repo activates a WebHook on a commit to master. On a commit to master, a Jenkins job compiles and runs the test code in this repo!
 Note, it does not build on commits to .md files.
