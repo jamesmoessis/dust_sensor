@@ -17,6 +17,7 @@ Arduino Mega connected to a dust sensor which triggers output if adjustable dust
 ### On a software level
 
 * The third party hpma115S0.h Arduino library is used to communicate with the sensor. https://github.com/felixgalindo/HPMA115S0
+* The main code is in the Arduino sketch dust_sensor.ino
 * Treshold dust level level can be scaled via changing `SCALE`. Which must be defined as a `float`. 
 * The `setup()` function establishes Serial communication to the HPMA115S0 and the Arduino Serial monitor. It runs initialization protocol to the dust sensor. It also initializes the trigger pin (to the BJT) as an output. It also power cycles the dust sensor.
 * The dust measurements are stored in `circle[]`. This circularly loops through, and will be up to date with the 300 most recent measurements.
