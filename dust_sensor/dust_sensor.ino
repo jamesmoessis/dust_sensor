@@ -19,6 +19,9 @@
 // scale the threshold with this value. 
 #define SCALE 1.0 // to specify float, must have decimal notation
 
+void reset_sensor(void);
+int read_adc(void);
+
 // GLOBALS
   time_t t;
 
@@ -163,6 +166,7 @@ void loop() {
       digitalWrite(GREEN_LED, HIGH);
       digitalWrite(FET, LOW);
       delay(1);
+    }
   }
   else {
     failure_count = 0;
