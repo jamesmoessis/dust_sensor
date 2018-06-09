@@ -31,7 +31,7 @@
   float average; 
   
   // Controlled by Dust Sensor
-  double sum = 0; // note: maxes at 65,535.
+  double sum = 0;
   float circle[300]; // Dust measurements store
   size_t circle_size = sizeof(circle)/sizeof(circle[0]);
   unsigned int i; // index for circle
@@ -54,9 +54,7 @@ void setup() {
   digitalWrite(GREEN_LED, HIGH);
   
   //power cycle dust sensor
-  digitalWrite(POWER_DUST, HIGH); 
-  delay(3000);
-  digitalWrite(POWER_DUST, LOW); 
+  reset_sensor();
   
   Serial.begin(BAUDRATE);
   Serial.println("Hello Computer.");
@@ -87,9 +85,11 @@ void setup() {
 
 void loop() {
     
+    static int failure_count;
     // Read Honeywell dust sensor
     unsigned int pm2_5, pm10;
     if (honeywell.ReadParticleMeasurement(&pm2_5, &pm10)) {
+      failure_count = 0;
       Serial.println("PM 2.5: " + String(pm2_5) + " ug/m3" );
       Serial.println("PM 10: " + String(pm10) + " ug/m3" );
       
@@ -98,6 +98,9 @@ void loop() {
       Serial.println("circle[i] = " + String(circle[i]));
       Serial.println("i = " + String(i));
       delay(10);
+    }
+    else {
+      failure_count++;
     }
     
     // Increment iterator
@@ -133,6 +136,7 @@ void loop() {
     threshold = read_adc() * ( (float)100 / (float)1023 );
     Serial.println("Threshold = " + String(threshold) + "%");
 
+  if (failure_count < 1000){
     // Sum all recent measurements
     int k = 0;
     sum = 0;
@@ -159,8 +163,14 @@ void loop() {
       digitalWrite(GREEN_LED, HIGH);
       digitalWrite(FET, LOW);
       delay(1);
-    }
+  }
+  else {
+    failure_count = 0;
+    reset_sensor();
+  }
 }
+
+
 
 //adapted from example Arduino sketch
 int read_adc(){
@@ -177,6 +187,14 @@ int read_adc(){
   return sensorValue;
 }
 
+void reset_sensor(){
+  digitalWrite(POWER_DUST, HIGH);
+  Serial.println("Resetting Honeywell Sensor..."); 
+  delay(3000);
+  digitalWrite(POWER_DUST, LOW);
+  return;
+}
+
 /***************************************************
  * Notes
  * Currently the use of memory is quite inefficient.
@@ -187,7 +205,7 @@ int read_adc(){
  * be altered, and memory efficiency should be tuned.
  * The method in which circle[] is summed can be made
  * more efficient through additional logic.
- * Additionally, the variables should be made local.
+ * Additionally, the variables could be static local.
 *****************************************************/
 
 
