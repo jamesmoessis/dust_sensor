@@ -8,7 +8,7 @@
  */
 
 #include "Arduino.h"
-#include <hpma115S0.h>   // https://github.com/GoldenMoe/HPMA115S0
+#include <hpma115S0.h>   // https://github.com/felixgalindo/HPMA115S0
 #include <TimeLib.h>     // https://github.com/PaulStoffregen/Time
 #include <MegunoLink.h>  // https://github.com/Megunolink/MLP
 
