@@ -11,4 +11,12 @@ type Response struct {
 	Status int
 }
 
-type Handler func(*Request) (*Response, error)
+type Settings struct {
+	IsOn      bool `json:"isOn"`
+	Threshold int  `json:"threshold"`
+}
+
+type SettingsDB interface {
+	GetSettings() (Settings, error)
+	UpdateSettings(Settings) error
+}

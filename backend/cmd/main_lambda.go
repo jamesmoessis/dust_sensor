@@ -9,12 +9,13 @@ import (
 )
 
 func HandleRequest(ctx context.Context, request events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, error) {
-	lambdaAgnosticReq := &handlers.Request{
+	agnosticReq := &handlers.Request{
 		Path:   request.Path,
 		Body:   request.Body,
 		Method: request.HTTPMethod,
 	}
-	res, err := handlers.RouterHandler(lambdaAgnosticReq)
+	handler := handlers.Handler{}
+	res, err := handler.RouterHandler(agnosticReq)
 	if err != nil {
 		return events.APIGatewayProxyResponse{StatusCode: 500}, err
 	}
