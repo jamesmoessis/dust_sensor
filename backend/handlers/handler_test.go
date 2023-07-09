@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"testing"
@@ -14,7 +15,7 @@ type MockSettingsDb struct {
 
 var _ SettingsDB = (*MockSettingsDb)(nil)
 
-func (db *MockSettingsDb) GetSettings() (Settings, error) {
+func (db *MockSettingsDb) GetSettings(_ context.Context) (Settings, error) {
 	var err error
 	if db.shouldError {
 		err = errors.New("test")
@@ -25,7 +26,7 @@ func (db *MockSettingsDb) GetSettings() (Settings, error) {
 	}, err
 }
 
-func (db *MockSettingsDb) UpdateSettings(Settings) error {
+func (db *MockSettingsDb) UpdateSettings(_ context.Context, _ Settings) error {
 	var err error
 	if db.shouldError {
 		err = errors.New("test")
@@ -34,10 +35,12 @@ func (db *MockSettingsDb) UpdateSettings(Settings) error {
 }
 
 func TestGetSettingsHandler(t *testing.T) {
-	h := Handler{db: &MockSettingsDb{}}
-	res, err := h.RouterHandler(&Request{Path: "/api/settings",
-		Method: "GET",
-	})
+	h := Handler{DB: &MockSettingsDb{}}
+	res, err := h.RouterHandler(
+		context.Background(),
+		&Request{Path: "/api/settings",
+			Method: "GET",
+		})
 	expected := &Response{
 		Status: 200,
 		Body:   `{"isOn":false,"threshold":100}`,
@@ -47,16 +50,17 @@ func TestGetSettingsHandler(t *testing.T) {
 }
 
 func TestGetSettingsHandlerError(t *testing.T) {
-	h := Handler{db: &MockSettingsDb{shouldError: true}}
-	res, err := h.RouterHandler(&Request{Path: "/api/settings",
-		Method: "GET",
-	})
+	h := Handler{DB: &MockSettingsDb{shouldError: true}}
+	res, err := h.RouterHandler(context.Background(),
+		&Request{Path: "/api/settings",
+			Method: "GET",
+		})
 	assert.Error(t, err)
 	assert.Equal(t, 500, res.Status)
 }
 
 func TestUpdateSettingsHandler(t *testing.T) {
-	h := Handler{db: &MockSettingsDb{}}
+	h := Handler{DB: &MockSettingsDb{}}
 	jsonBytes, err := json.Marshal(&Settings{
 		Threshold: 2,
 		IsOn:      true,
@@ -64,11 +68,13 @@ func TestUpdateSettingsHandler(t *testing.T) {
 	assert.NoError(t, err)
 	jsonString := string(jsonBytes)
 
-	res, err := h.RouterHandler(&Request{
-		Path:   "/api/settings",
-		Method: "PUT",
-		Body:   jsonString,
-	})
+	res, err := h.RouterHandler(
+		context.Background(),
+		&Request{
+			Path:   "/api/settings",
+			Method: "PUT",
+			Body:   jsonString,
+		})
 
 	expected := &Response{
 		Status: 200,
@@ -80,7 +86,7 @@ func TestUpdateSettingsHandler(t *testing.T) {
 }
 
 func TestUpdateSettingsHandlerError(t *testing.T) {
-	h := Handler{db: &MockSettingsDb{shouldError: true}}
+	h := Handler{DB: &MockSettingsDb{shouldError: true}}
 	jsonBytes, err := json.Marshal(&Settings{
 		Threshold: 2,
 		IsOn:      true,
@@ -88,11 +94,13 @@ func TestUpdateSettingsHandlerError(t *testing.T) {
 	assert.NoError(t, err)
 	jsonString := string(jsonBytes)
 
-	res, err := h.RouterHandler(&Request{
-		Path:   "/api/settings",
-		Method: "PUT",
-		Body:   jsonString,
-	})
+	res, err := h.RouterHandler(
+		context.Background(),
+		&Request{
+			Path:   "/api/settings",
+			Method: "PUT",
+			Body:   jsonString,
+		})
 
 	expected := &Response{
 		Status: 500,

@@ -1,19 +1,22 @@
 package handlers
 
-import "encoding/json"
+import (
+	"context"
+	"encoding/json"
+)
 
 type Handler struct {
-	db SettingsDB
+	DB SettingsDB
 }
 
-func (h *Handler) RouterHandler(req *Request) (*Response, error) {
+func (h *Handler) RouterHandler(ctx context.Context, req *Request) (*Response, error) {
 	switch req.Path {
 	case "/api/settings":
 		switch req.Method {
 		case "GET":
-			return h.getSettingsHandler(req)
+			return h.getSettingsHandler(ctx, req)
 		case "PUT":
-			return h.updateSettingsHandler(req)
+			return h.updateSettingsHandler(ctx, req)
 		default:
 			return &Response{Status: 405}, nil
 		}
@@ -21,20 +24,20 @@ func (h *Handler) RouterHandler(req *Request) (*Response, error) {
 		if req.Method != "POST" {
 			return &Response{Status: 405}, nil
 		}
-		return h.postMeasurementsHandler(req)
+		return h.postMeasurementsHandler(ctx, req)
 	default:
 		return &Response{Status: 404}, nil
 	}
 }
 
-func (h *Handler) updateSettingsHandler(req *Request) (*Response, error) {
+func (h *Handler) updateSettingsHandler(ctx context.Context, req *Request) (*Response, error) {
 	settings := &Settings{}
 	err := json.Unmarshal([]byte(req.Body), settings)
 	if err != nil {
 		return &Response{Status: 500}, err
 	}
 
-	err = h.db.UpdateSettings(*settings)
+	err = h.DB.UpdateSettings(ctx, *settings)
 	if err != nil {
 		return &Response{Status: 500}, err
 	}
@@ -42,8 +45,8 @@ func (h *Handler) updateSettingsHandler(req *Request) (*Response, error) {
 	return &Response{Status: 200, Body: "OK"}, nil
 }
 
-func (h *Handler) getSettingsHandler(req *Request) (*Response, error) {
-	settings, err := h.db.GetSettings()
+func (h *Handler) getSettingsHandler(ctx context.Context, req *Request) (*Response, error) {
+	settings, err := h.DB.GetSettings(ctx)
 	if err != nil {
 		return &Response{Status: 500}, err
 	}
@@ -59,6 +62,6 @@ func (h *Handler) getSettingsHandler(req *Request) (*Response, error) {
 	}, nil
 }
 
-func (h *Handler) postMeasurementsHandler(req *Request) (*Response, error) {
+func (h *Handler) postMeasurementsHandler(ctx context.Context, req *Request) (*Response, error) {
 	return &Response{}, nil
 }

@@ -6,6 +6,7 @@ import (
 	"github.com/aws/aws-lambda-go/events"
 	"github.com/aws/aws-lambda-go/lambda"
 	"github.com/jamesmoessis/dust_sensor/backend/handlers"
+	"github.com/jamesmoessis/dust_sensor/backend/storage"
 )
 
 func HandleRequest(ctx context.Context, request events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, error) {
@@ -14,8 +15,11 @@ func HandleRequest(ctx context.Context, request events.APIGatewayProxyRequest) (
 		Body:   request.Body,
 		Method: request.HTTPMethod,
 	}
-	handler := handlers.Handler{}
-	res, err := handler.RouterHandler(agnosticReq)
+	ddb := storage.NewDynamoSettingsDb(ctx)
+	handler := handlers.Handler{
+		DB: ddb,
+	}
+	res, err := handler.RouterHandler(ctx, agnosticReq)
 	if err != nil {
 		return events.APIGatewayProxyResponse{StatusCode: 500}, err
 	}

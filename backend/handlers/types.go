@@ -1,5 +1,7 @@
 package handlers
 
+import "context"
+
 type Request struct {
 	Body   string
 	Method string
@@ -17,6 +19,6 @@ type Settings struct {
 }
 
 type SettingsDB interface {
-	GetSettings() (Settings, error)
-	UpdateSettings(Settings) error
+	GetSettings(context.Context) (Settings, error)
+	UpdateSettings(context.Context, Settings) error
 }
