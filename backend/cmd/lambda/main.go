@@ -2,6 +2,8 @@ package main
 
 import (
 	"context"
+	"encoding/json"
+	"fmt"
 
 	"github.com/aws/aws-lambda-go/events"
 	"github.com/aws/aws-lambda-go/lambda"
@@ -15,6 +17,8 @@ func HandleRequest(ctx context.Context, request events.APIGatewayProxyRequest) (
 		Body:   request.Body,
 		Method: request.HTTPMethod,
 	}
+	b, _ := json.Marshal(request)
+	fmt.Printf(string(b) + "\n")
 	ddb := storage.NewDynamoSettingsDb(ctx)
 	handler := handlers.Handler{
 		DB: ddb,
