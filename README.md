@@ -38,8 +38,3 @@ Integration has been added with MegunoLink monitoring software.
 ## Remote Control
 
 Edit threshold by scaling it. Remotely edit the SCALE variable and then upload the new code.
-
-This repo activates a WebHook on a commit to master. On a commit to master, a Jenkins job compiles and runs the test code in this repo!
-Note, it does not build on commits to .md files.
-
-
