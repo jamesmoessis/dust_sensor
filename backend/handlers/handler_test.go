@@ -15,12 +15,12 @@ type MockSettingsDb struct {
 
 var _ SettingsDB = (*MockSettingsDb)(nil)
 
-func (db *MockSettingsDb) GetSettings(_ context.Context) (Settings, error) {
+func (db *MockSettingsDb) GetSettings(_ context.Context) (*Settings, error) {
 	var err error
 	if db.shouldError {
 		err = errors.New("test")
 	}
-	return Settings{
+	return &Settings{
 		Threshold: 100,
 		IsOn:      false,
 	}, err

@@ -19,6 +19,6 @@ type Settings struct {
 }
 
 type SettingsDB interface {
-	GetSettings(context.Context) (Settings, error)
+	GetSettings(context.Context) (*Settings, error)
 	UpdateSettings(context.Context, Settings) error
 }
