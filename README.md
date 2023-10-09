@@ -38,3 +38,10 @@ Integration has been added with MegunoLink monitoring software.
 ## Remote Control
 
 Edit threshold by scaling it. Remotely edit the SCALE variable and then upload the new code.
+
+## Web User Interface
+
+* `frontend/` contains a basic react application created with `npx create-react-app`. 
+* The repository does not contain the module files to run the react app. Run the command `npm install` while in the directory to install necessary dependencies which are listed in `package.json`.
+* Once it's installed, running `npm start` in the command line will start the application and open it in a localhost browser window. 
+* More information on scripts is provided in the README file provided by react in `frontend/`
