@@ -1,8 +1,8 @@
 import { render, screen } from '@testing-library/react';
 import App from './App';
 
-test('renders button title', () => {
+test('renders threshold title', () => {
   render(<App />);
-  const buttonTitle = screen.getByText(/POWER/i);
-  expect(buttonTitle).toBeInTheDocument();
+  const thresTitle = screen.getByText(/Threshold/i);
+  expect(thresTitle).toBeInTheDocument();
 });
