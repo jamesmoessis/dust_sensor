@@ -1,23 +1,20 @@
 import React, { useState } from 'react';
-import ReactSwitch from 'react-switch';
+
+import Stack from '@mui/material/Stack';
+import Button from '@mui/material/Button';
 
 const PowerSwitch = () => {
-    const [checked, setChecked] = useState(true);
-
-    const handleChange = val => {
-        setChecked(val)
-    }
-
-    return (
-        <div className="controls" id='power-switch'>
-            
-            <div id='power-title'>POWER</div>
-            <ReactSwitch
-                checked={checked}
-                onChange={handleChange}
-            />
-        </div>
-      );
+  return (
+    <div className='control'>
+     <Stack direction="row" spacing={3}>
+      <Button variant="contained" color="success">
+        POWER ON
+      </Button>
+      <Button variant="contained" color="error">
+        POWER OFF
+      </Button>
+    </Stack>
+    </div>
+  );
 }
-
 export default PowerSwitch;

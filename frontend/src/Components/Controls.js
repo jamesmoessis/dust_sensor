@@ -6,8 +6,8 @@ import Threshold from './Threshold'
 const Controls = () => {
     return (
         <div className='controls-container'>
-            <PowerSwitch/>
             <Threshold/>
+            <PowerSwitch/>
         </div>
     );
 }
