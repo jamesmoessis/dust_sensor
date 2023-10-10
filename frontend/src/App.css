@@ -1,0 +1,46 @@
+.App {
+  text-align: center;
+}
+
+.App-header {
+  background-color: #1a237e;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  font-size: calc(10px + 2vmin);
+  color: rgb(255, 255, 255);
+}
+
+.App-body {
+  background-color: #3949ab;
+  min-height: 95vh;
+  justify-content: center;
+  align-items: center;
+}
+
+.controls-container {
+  padding: 50px;
+}
+
+.control {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+  margin: 20px;
+}
+
+#threshold-slider h2 {
+  background-color: #1a237e;
+  padding: 10px;
+  border-radius: 50px;
+  color: white;
+}
+@keyframes App-logo-spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
