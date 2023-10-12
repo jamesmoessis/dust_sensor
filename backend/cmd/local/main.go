@@ -65,6 +65,7 @@ func (h *localHandler) httpHandler(rw http.ResponseWriter, req *http.Request) {
 	rw.Header().Add("Access-Control-Allow-Origin", resOrigin)
 	rw.Header().Add("Access-Control-Allow-Methods", "GET, PUT")
 	rw.Header().Add("Access-Control-Allow-Headers", "Content-Type")
+	rw.Header().Add("Content-Type", "application/json")
 	rw.WriteHeader(res.Status)
 	rw.Write([]byte(res.Body))
 }
