@@ -17,6 +17,8 @@ func (h *Handler) RouterHandler(ctx context.Context, req *Request) (*Response, e
 			return h.getSettingsHandler(ctx, req)
 		case "PUT":
 			return h.updateSettingsHandler(ctx, req)
+		case "OPTIONS":
+			return h.allowCorsHandler(ctx, req)
 		default:
 			return &Response{Status: 405}, nil
 		}
@@ -42,7 +44,7 @@ func (h *Handler) updateSettingsHandler(ctx context.Context, req *Request) (*Res
 		return &Response{Status: 500}, err
 	}
 
-	return &Response{Status: 200, Body: "OK"}, nil
+	return &Response{Status: 200, Body: "{\"msg\":\"OK\"}"}, nil
 }
 
 func (h *Handler) getSettingsHandler(ctx context.Context, req *Request) (*Response, error) {
@@ -59,6 +61,12 @@ func (h *Handler) getSettingsHandler(ctx context.Context, req *Request) (*Respon
 	return &Response{
 		Status: 200,
 		Body:   string(body),
+	}, nil
+}
+
+func (h *Handler) allowCorsHandler(ctx context.Context, req *Request) (*Response, error) {
+	return &Response{
+		Status: 200,
 	}, nil
 }
 

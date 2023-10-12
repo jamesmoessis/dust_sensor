@@ -27,7 +27,16 @@ func HandleRequest(ctx context.Context, request events.APIGatewayProxyRequest) (
 	if err != nil {
 		return events.APIGatewayProxyResponse{StatusCode: 500}, err
 	}
-	return events.APIGatewayProxyResponse{Body: res.Body, StatusCode: res.Status}, nil
+	return events.APIGatewayProxyResponse{
+		Body:       res.Body,
+		StatusCode: res.Status,
+		Headers: map[string]string{
+			"Access-Control-Allow-Origin":  "https://dust.jamesmoessis.com",
+			"Access-Control-Allow-Methods": "GET, PUT",
+			"Access-Control-Allow-Headers": "Content-Type",
+			"Content-Type":                 "application/json",
+		},
+	}, nil
 }
 
 func main() {

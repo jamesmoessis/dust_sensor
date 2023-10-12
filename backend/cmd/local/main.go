@@ -56,6 +56,15 @@ func (h *localHandler) httpHandler(rw http.ResponseWriter, req *http.Request) {
 		return
 	}
 
+	reqOrigin := req.Header.Get("Origin")
+	resOrigin := "https://dust.jamesmoessis.com"
+	if reqOrigin == "http://localhost:3000" {
+		resOrigin = reqOrigin
+	}
+
+	rw.Header().Add("Access-Control-Allow-Origin", resOrigin)
+	rw.Header().Add("Access-Control-Allow-Methods", "GET, PUT")
+	rw.Header().Add("Access-Control-Allow-Headers", "Content-Type")
 	rw.WriteHeader(res.Status)
 	rw.Write([]byte(res.Body))
 }
