@@ -1,0 +1,18 @@
+#threshold-slider {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+}
+
+#slider-container {
+    display: flex;
+    flex-direction: column;
+    margin-top: 30px;
+    color: white;
+}
+
+#set-btn {
+    width: 20%;
+    margin-top: 30px;
+}
