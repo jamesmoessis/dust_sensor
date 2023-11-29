@@ -16,6 +16,10 @@
   min-height: 95vh;
   justify-content: center;
   align-items: center;
+  background-image: url(../public/APOD_\ 2010\ March\ 13\ -\ Centaurus\ A.jpeg);
+  background-image: url(../public/graham-holtshausen-fUnfEz3VLv4-unsplash.jpg);
+  background-size: 100vw 100vh;
+  background-repeat: no-repeat;
 }
 
 .controls-container {
