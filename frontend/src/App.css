@@ -16,26 +16,37 @@
   min-height: 95vh;
   justify-content: center;
   align-items: center;
+  /* background-image: url(../public/APOD_\ 2010\ March\ 13\ -\ Centaurus\ A.jpeg); */
+  background-image: url(../public/graham-holtshausen-fUnfEz3VLv4-unsplash.jpg);
+  background-size: 100vw 100vh;
+  background-repeat: no-repeat;
 }
 
 .controls-container {
-  padding: 50px;
+  padding: 30px;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-around;
+  align-items: center;
 }
 
 .control {
   display: flex;
+  flex-direction: column;
   justify-content: center;
-  align-items: center;
-  text-align: center;
-  margin: 20px;
+  padding: 20px;
+  background-color: #1a237e;
+  border-radius: 20px;
+  margin: 10px;
 }
 
-#threshold-slider h2 {
-  background-color: #1a237e;
-  padding: 10px;
-  border-radius: 50px;
+.control h2 {
+  background-color: #3949ab;
+  padding: 15px 25px 15px 25px;
+  border-radius: 20px;
   color: white;
 }
+
 @keyframes App-logo-spin {
   from {
     transform: rotate(0deg);

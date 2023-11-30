@@ -3,11 +3,11 @@ import React from 'react';
 import PowerSwitch from './PowerSwitch';
 import Threshold from './Threshold'
 
-const Controls = () => {
+const Controls = ( {threshold, onThresholdChange, onPowerChange} ) => {
     return (
         <div className='controls-container'>
-            <Threshold/>
-            <PowerSwitch/>
+            <Threshold onThresholdChange={onThresholdChange}/>
+            <PowerSwitch />
         </div>
     );
 }
