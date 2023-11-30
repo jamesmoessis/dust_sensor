@@ -7,9 +7,10 @@ import { styled } from '@mui/material/styles';
 import Switch from '@mui/material/Switch';
 import Typography from '@mui/material/Typography';
 
+import { baseURL } from './URL';
 import '../App.css';
 
-const PowerSwitch = ( {threshold} ) => {
+const PowerSwitch = () => {
 
   const AntSwitch = styled(Switch)(({ theme }) => ({
     width: 28,
@@ -53,41 +54,43 @@ const PowerSwitch = ( {threshold} ) => {
     },
   }));
 
+  const [isOn, setIsOn] = useState(null);
+
   const togglePower = (event) => {
-    console.log("POWER ON?: ", event.target.checked);
-
-    let isOn = event.target.checked;
-
-    const powerSettings = {
-      "isOn": isOn,
-      "threshold": threshold
-    }
-    const headers = {
-      "Content-Type": "application/json"
-    }
-
-    axios.put("http://localhost:8080/api/settings", powerSettings, headers)
+    axios.get(baseURL)  // get the threshold again because that's much much simpler and easier than sharing the state
     .then((res) => {
-      console.log(res, `Power on successfully changed to ${isOn}`);
-    })
-    // .then(() => {
-    //   window.location.reload();   // if it's desired for the window to be reloaded after power switch.
-    // })
-    .catch((error) => {
-      console.log(error);
+      console.log("power on?: ", event.target.checked);
+      let isItOn = event.target.checked;
+      setIsOn(event.target.checked);
+      console.log(isItOn, "is it on???");
+      const powerSettings = {
+        "isOn": isItOn,
+        "threshold": res.data.threshold
+      }
+      const headers = {
+        "Content-Type": "application/json"
+      }
+      axios.put(baseURL, powerSettings, headers)
+      .then((res) => {
+        console.log(res, `Power on successfully changed to ${isItOn}`);
+      })
+      .catch((error) => {
+        console.log(error);
+        alert("Power toggle failed");
+      })
     })
   }
 
-  const [isOn, setIsOn] = useState(null);
-
-  useEffect(() => {     // gets the threshold value to show in the current threshold area. 
-    axios.get("http://localhost:8080/api/settings")
+  useEffect(() => {
+    axios.get(baseURL)
     .then((res) => {
       setIsOn(res.data.isOn);
-      console.log('isOn state collected', res.data)
+      console.log(isOn, "is it on?");
+      console.log('initial isOn state collected', res.data)
     })
     .catch((error) => {
-      console.log("failed to collect threshold from API", error);
+      console.log("failed to collect state from API", error);
+      alert("couldn't collect state from API")
     })
   }, [])
 

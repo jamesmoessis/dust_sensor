@@ -6,14 +6,14 @@ import Slider from '@mui/material/Slider';
 import Button from '@mui/material/Button';
 
 import './Slider.css';
+import { baseURL } from './URL';
 
 const Threshold = ( {onThresholdChange} ) => {
-  
-  const [thresValue, setThres] = useState(null);
+  const [thresValue, setThres] = useState(100);
   const [sliderValue, setSliderValue] = useState(null);
 
   useEffect(() => {     // gets the threshold value to show in the current threshold area. 
-    axios.get("http://localhost:8080/api/settings")
+    axios.get(baseURL)
     .then((res) => {
       setThres(res.data.threshold);
       console.log('threshold is collected', res.data)
@@ -25,40 +25,40 @@ const Threshold = ( {onThresholdChange} ) => {
   }, [onThresholdChange])
 
   const getSliderVal = (event, val) => {
-
     setSliderValue(val)    // can use 'val' or 'event.target.value'
-
     // console.log(val, "val");
     // console.log(event.target.value, "event.target.val")
-
   }
 
   const putThres = () => {
+      axios.get(baseURL)    // has to get the state of isOn to be consistent. 
+      .then((res) => {
+        let isItOn = res.data.isOn;
+        const settings = {
+          "isOn": isItOn,
+          "threshold": sliderValue
+        }
+        const headers = {
+          "Content-Type": "application/json"
+        }
+        axios.put(baseURL, settings, headers)
+        .then((res) => {
+          setThres(sliderValue);
+          console.log(res, `Threshold successfully changed to ${sliderValue}`);
+          alert('Threshold has been updated!');
+        })
+        .catch((error) => {
+          console.log(error);
+          alert('Failed to send threshold');
+        })
+      })
+      .catch((error) => {
+        console.log("couldn't get isOn state while changing threshold");
+        alert("couldn't get isOn state while changing threshold")
+      })
+      .then(() => {
 
-    const settings = {
-      "isOn": false,
-      "threshold": sliderValue
-    }
-
-    const headers = {
-      "Content-Type": "application/json"
-    }
-
-    /* For debugging purposes, window does not currently automatically reload when it sets the threshold.
-        This makes it so you can still see console logs */
-
-    axios.put("http://localhost:8080/api/settings", settings, headers)
-    .then((res) => {
-      console.log(res, `Threshold successfully changed to ${sliderValue}`);
-      // alert('Threshold has been updated!');
-      alert('Threshold has been updated! Refresh page to see the difference. (debug mode)');
-    })
-    // .then( () => {
-    //    window.location.reload();
-    // }) 
-    .catch((error) => {
-      console.log(error);
-    })
+      })
   }
     
   return (
@@ -71,8 +71,8 @@ const Threshold = ( {onThresholdChange} ) => {
             defaultValue={thresValue}
             aria-label="Default" 
             valueLabelDisplay="auto" 
-            min={0} 
-            max={300} 
+            min={0}
+            max={100} 
             step={1}
             color='secondary'
             onChange={getSliderVal}
