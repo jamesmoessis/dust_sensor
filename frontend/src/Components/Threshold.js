@@ -1,6 +1,9 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 
+import { toast } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
+
 import Box from '@mui/material/Box';
 import Slider from '@mui/material/Slider';
 import Button from '@mui/material/Button';
@@ -31,35 +34,32 @@ const Threshold = ( {onThresholdChange} ) => {
   }
 
   const putThres = () => {
-      axios.get(baseURL)    // has to get the state of isOn to be consistent. 
+    axios.get(baseURL)
       .then((res) => {
         let isItOn = res.data.isOn;
         const settings = {
           "isOn": isItOn,
           "threshold": sliderValue
-        }
+        };
         const headers = {
           "Content-Type": "application/json"
-        }
+        };
         axios.put(baseURL, settings, headers)
-        .then((res) => {
-          setThres(sliderValue);
-          console.log(res, `Threshold successfully changed to ${sliderValue}`);
-          alert('Threshold has been updated!');
-        })
-        .catch((error) => {
-          console.log(error);
-          alert('Failed to send threshold');
-        })
+          .then((res) => {
+            setThres(sliderValue);
+            console.log(res, `Threshold successfully changed to ${sliderValue}`);
+            toast.success('Threshold has been updated!');
+          })
+          .catch((error) => {
+            console.log(error);
+            toast.error('Failed to send threshold');
+          });
       })
       .catch((error) => {
         console.log("couldn't get isOn state while changing threshold");
-        alert("couldn't get isOn state while changing threshold")
-      })
-      .then(() => {
-
-      })
-  }
+        toast.error("Failed to get power state while changing threshold");
+      });
+  };
     
   return (
     <div className='control' id='threshold-slider'>

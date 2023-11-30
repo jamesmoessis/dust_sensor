@@ -1,6 +1,10 @@
 import './App.css';
 import React, { useState } from 'react';
 
+// Toastify Notifcations
+import { ToastContainer } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
+
 import Controls from './Components/Controls';
 
 // export const baseURL = "http://localhost:8080/api/settings";
@@ -20,6 +24,7 @@ function App() {
         <h2>Dust Sensor Interface</h2>
       </header>
       <section className='App-body'>
+        <ToastContainer/>
         <Controls threshold={threshold} onThresholdChange={handleThresholdChange}/>
       </section>
     </div>

@@ -6,6 +6,9 @@ import Stack from '@mui/material/Stack';
 import { styled } from '@mui/material/styles';
 import Switch from '@mui/material/Switch';
 import Typography from '@mui/material/Typography';
+// Toast notifications
+import { toast } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 
 import { baseURL } from '../App';
 import '../App.css';
@@ -73,13 +76,20 @@ const PowerSwitch = () => {
       axios.put(baseURL, powerSettings, headers)
       .then((res) => {
         console.log(res, `Power on successfully changed to ${isItOn}`);
+        if (isItOn) {
+          toast.success(`Power successfully turned on!`);
+        } else {
+          toast.success(`Power successfully turned off!`);
+        }
       })
       .catch((error) => {
         console.log(error);
-        alert("Power toggle failed");
+        toast.error("Power toggle failed");
       })
     })
   }
+
+  /*  */
 
   useEffect(() => {
     axios.get(baseURL)
@@ -90,7 +100,7 @@ const PowerSwitch = () => {
     })
     .catch((error) => {
       console.log("failed to collect state from API", error);
-      alert("couldn't collect state from API")
+      toast.error("Failed collect state from API")
     })
   }, [])
 
