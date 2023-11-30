@@ -7,7 +7,7 @@ import { styled } from '@mui/material/styles';
 import Switch from '@mui/material/Switch';
 import Typography from '@mui/material/Typography';
 
-import { baseURL } from './URL';
+import { baseURL } from '../App';
 import '../App.css';
 
 const PowerSwitch = () => {

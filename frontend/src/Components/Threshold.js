@@ -6,7 +6,7 @@ import Slider from '@mui/material/Slider';
 import Button from '@mui/material/Button';
 
 import './Slider.css';
-import { baseURL } from './URL';
+import { baseURL } from '../App';
 
 const Threshold = ( {onThresholdChange} ) => {
   const [thresValue, setThres] = useState(100);
