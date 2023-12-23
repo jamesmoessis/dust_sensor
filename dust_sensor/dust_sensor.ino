@@ -2,34 +2,10 @@
  * @file dust_sensor.ino
  * @author James Moessis
  * @date April 2018
- * 
- * See Program notes at bottom.
+ * @date December 2023
+ *
  * See README.md for more info.
  */
-
-/**
-
-Two modes? 
-
-One mode manual meaning you set whether it's on or off
-It samples continuously in this mode 
-
-Or automatic mode 
-input sampling period / rate.
-It samples only at night, say once every minute or so
-
-the values jump around so we take an average 
-
-start / stop dust measurements without power cycling the HPMA? 
-
-turn off automatically during the day? 
-
-Let's take an average every 2 mins.
-So we take around 100 measurements let's say every 2 mins and then power the dust sensor off. 
-
-So we have sleep time between samples. 
-Then we have amount of samples in a burst (say 150)?
-*/
 
 #include "Arduino.h"
 #include <SPI.h>
