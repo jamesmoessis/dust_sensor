@@ -69,6 +69,9 @@ unsigned long beginMicros, endMicros;
 unsigned long byteCount = 0;
 bool printWebData = true;  // set to false for better speed measurement
 
+// Cloudfront distribution which turns HTTP into HTTPS to access backend API GW / Lambda
+String hostname = "d1d1khgtxr0hea.cloudfront.net";
+String port = "80";
 
 void setup() {
   // initialize pins
