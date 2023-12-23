@@ -7,47 +7,94 @@
  * See README.md for more info.
  */
 
+/**
+
+Two modes? 
+
+One mode manual meaning you set whether it's on or off
+It samples continuously in this mode 
+
+Or automatic mode 
+input sampling period / rate.
+It samples only at night, say once every minute or so
+
+the values jump around so we take an average 
+
+start / stop dust measurements without power cycling the HPMA? 
+
+turn off automatically during the day? 
+
+Let's take an average every 2 mins.
+So we take around 100 measurements let's say every 2 mins and then power the dust sensor off. 
+
+So we have sleep time between samples. 
+Then we have amount of samples in a burst (say 150)?
+*/
+
 #include "Arduino.h"
-#include <hpma115S0.h>   // https://github.com/felixgalindo/HPMA115S0
-#include <TimeLib.h>     // https://github.com/PaulStoffregen/Time
-#include <MegunoLink.h>  // https://github.com/Megunolink/MLP
+#include <SPI.h>
+#include <Ethernet.h>
+#include <hpma115S0.h>  // https://github.com/felixgalindo/HPMA115S0
+#include <TimeLib.h>    // https://github.com/PaulStoffregen/Time
 
 #define BAUDRATE 9600
-#define FET 2 // Trigger threshold. MOSFET. Actives red LED
-#define GREEN_LED 3 // High when threshold note exceeded
-#define POWER_DUST 4 // pnp bjt powering HPMA
-// scale the threshold with this value. 
-#define SCALE 1.0 // to specify float, must have decimal notation
+#define FET 2         // Trigger threshold. MOSFET. Actives red LED
+#define GREEN_LED 3   // High when threshold note exceeded
+#define POWER_DUST 4  // pnp bjt powering HPMA
+#define BURST_SIZE 50
+#define DELAY_BETWEEN_BURSTS_MS 60000
+#define FAILURE_TOLERANCE 0.1
 
-void reset_sensor(void);
-int read_adc(void);
+typedef struct DynamicSettings {
+  bool on;
+  int threshold;  // between 0 and 1000
+} dynamic_settings;
+
+void reset_sensor();
+int read_adc();
+dynamic_settings get_settings();
+void init_ethernet();
+void start_sensor();
+void stop_sensor();
+void emit_data(int, int, int, time_t);
 
 // GLOBALS
-  time_t t;
+time_t t;
 
-  //Controlled by Potentiometer
-  const int analogInPin = A0;  // Potentiometer Analog ping
-  const int analogOutPin = 9; 
-  short int sensorValue = 0;        // value read from the pot
-  short int outputValue = 0;        // value output to the PWM
-  float threshold;
-  float average; 
-  
-  // Controlled by Dust Sensor
-  double sum = 0;
-  float circle[300]; // Dust measurements store
-  size_t circle_size = sizeof(circle)/sizeof(circle[0]);
-  unsigned int i; // index for circle
-
+//Controlled by Potentiometer
+const int analogInPin = A0;  // Potentiometer Analog ping (pin 54)
+const int analogOutPin = 9;
+short int sensorValue = 0;  // value read from the pot
+short int outputValue = 0;  // value output to the PWM
 
 //Create an instance of the HPMA115S0 class
 HPMA115S0 honeywell(Serial1);
+bool sensor_on = false;
 
-//Create an instance of MegunoLink TimePlot class
-TimePlot dust_plot;
+// Enter a MAC address for your controller below.
+// Newer Ethernet shields have a MAC address printed on a sticker on the shield
+byte mac[] = { 0xDE, 0xAD, 0xBE, 0xEF, 0xFE, 0xED };
+
+// if you don't want to use DNS (and reduce your sketch size)
+// use the numeric IP instead of the name for the server:
+char server[] = "www.google.com";  // name address for Google (using DNS)
+
+// Set the static IP address to use if the DHCP fails to assign
+IPAddress ip(192, 168, 0, 177);
+IPAddress myDns(192, 168, 0, 1);
+
+// Initialize the Ethernet client library
+// with the IP address and port of the server
+// that you want to connect to (port 80 is default for HTTP):
+EthernetClient client;
+
+// Variables to measure the speed
+unsigned long beginMicros, endMicros;
+unsigned long byteCount = 0;
+bool printWebData = true;  // set to false for better speed measurement
+
 
 void setup() {
-  
   // initialize pins
   pinMode(POWER_DUST, OUTPUT);
   pinMode(FET, OUTPUT);
@@ -55,129 +102,99 @@ void setup() {
 
   digitalWrite(FET, LOW);
   digitalWrite(GREEN_LED, HIGH);
-  
-  //power cycle dust sensor
-  reset_sensor();
-  
+
   Serial.begin(BAUDRATE);
   Serial.println("Hello Computer.");
-  
-  // initialize all measurements as 0
-  for( i = 0; i < circle_size; i++){
-    circle[i] = 0;
-  }
-  i = 0; // i is global, reset to 0
 
-  dust_plot.SetTitle("Dust vs Threshold Over Time");
-  dust_plot.SetXlabel("Time");
-  dust_plot.SetYlabel("Dust Level (%)");
-  
-  Serial1.begin(BAUDRATE); //begin honeywell comms
+  Serial1.begin(BAUDRATE);  //begin honeywell comms
   do {
     Serial.println("Starting Serial1...");
-    delay(5000); // wait 5s for honeywell to connect
+    delay(5000);  // wait 5s for honeywell to connect
   } while (!Serial1);
 
-  //power control will be on pin 3, active low
-  
-  honeywell.Init();
-  honeywell.StartParticleMeasurement();
+  //init_ethernet();
+
   Serial.println("Setup func complete!");
 }
 
 
 void loop() {
-    
-    static int failure_count;
-    // Read Honeywell dust sensor
+  dynamic_settings settings = get_settings();
+
+  if (settings.on) {
+    start_sensor();
+
+    // Record burst of measurements
+    short dust_levels[BURST_SIZE];
+    int failure_count = 0;
     unsigned int pm2_5, pm10;
-    if (honeywell.ReadParticleMeasurement(&pm2_5, &pm10)) {
-      failure_count = 0;
-      Serial.println("PM 2.5: " + String(pm2_5) + " ug/m3" );
-      Serial.println("PM 10: " + String(pm10) + " ug/m3" );
-      
-      // convert dust measurement to value out of 100
-      circle[i] = pm10 * ( (float)100 / (float)1000 ); 
-      Serial.println("circle[i] = " + String(circle[i]));
-      Serial.println("i = " + String(i));
-      delay(10);
-    }
-    else {
-      failure_count++;
-    }
-    
-    // Increment iterator
-    // If reached end of array, go back to beginning
-    if(i >= circle_size - 1) {
-      i = 0;
-      Serial.println("Resetting i!");
-      time_t lap_time = now() - t;
-      Serial.print("lap_time = ");
-      Serial.println(lap_time);
-      t = now(); // time in sec since program started
+    for (int k = 0; k < BURST_SIZE; k++) {
+      dust_levels[k] = 0;
+      // Read Honeywell dust sensor
+      if (honeywell.ReadParticleMeasurement(&pm2_5, &pm10)) {
+        Serial.println("PM 2.5: " + String(pm2_5) + " ug/m3");
+        Serial.println("PM 10: " + String(pm10) + " ug/m3");
 
-      // Send data to meguno for plotting
-      // https://www.megunolink.com/documentation/plotting/time-plot-reference/
-      dust_plot.SendData("Dust Level", average);
-      dust_plot.SendData("Threshold Level", SCALE*threshold);
-
-      // Print message to meguno for logging
-      // https://www.megunolink.com/documentation/logging-data/
-      Serial.print("{MESSAGE:|data|");
-      Serial.print(",");
-      Serial.print(SCALE*threshold);
-      Serial.print(",");
-      Serial.print(average);
-      Serial.println("}");
-    }
-    else {
-      i++;
-    }      
-
-    //read analog
-    //threshold dust level out of 100
-    threshold = read_adc() * ( (float)100 / (float)1023 );
-    Serial.println("Threshold = " + String(threshold) + "%");
-
-  if (failure_count < 1000){
-    // Sum all recent measurements
-    int k = 0;
-    sum = 0;
-    for(k = 0; k < circle_size; k++) {
-      sum = sum + circle[k];
-      //sum = sum + (float)99.9; //test maxed values
+        // pm10 is between 0 and 1000
+        dust_levels[k] = (short)pm10;
+        Serial.println("circle[" + String(k) + "] = " + String(dust_levels[k]));
+      } else {
+        dust_levels[k] = -1;  // indicates a reading which should not be counted
+        failure_count++;      // todo make failure_count non-static and we can emit per burst
+      }
+      delay(100);
     }
 
-    // Average all recent measurements
-    average = ( (float)sum ) / ( (float)circle_size ); 
-    //Serial.println("Sum = " + String(sum));
-    Serial.println("Avg = " + String(average));     
-    
-    
-    // Red Light on
-    if (average >= SCALE * threshold) {
-      digitalWrite(GREEN_LED, LOW);
-      digitalWrite(FET, HIGH);
-      delay(1);
+    stop_sensor();
+
+    if (failure_count > FAILURE_TOLERANCE * BURST_SIZE) {
+      Serial.println("Warning: dust sensor readings failed " + String(failure_count) + " times in the current burst.");
+    }
+
+    int sum = 0;
+    for (int k = 0; k < BURST_SIZE; k++) {
+      if (dust_levels[k] != -1) {
+        sum += dust_levels[k];
+      }
+    }
+    int average = sum / BURST_SIZE;
+
+    if (average >= settings.threshold) {
+      digitalWrite(GREEN_LED, LOW);  // Red Light on
+      digitalWrite(FET, HIGH);       // enable alarm
       Serial.println("Threshold Exceeded");
+    } else {
+      digitalWrite(GREEN_LED, HIGH);  // Green light on
+      digitalWrite(FET, LOW);         // disable alarm
     }
-    // Green light on
-    else {
-      digitalWrite(GREEN_LED, HIGH);
-      digitalWrite(FET, LOW);
-      delay(1);
-    }
+
+    time_t lap_time = now() - t;
+    t = now();  // time in sec since program started
+
+    emit_data(average, settings.threshold, failure_count, lap_time);
+  } else {
+    stop_sensor();
   }
-  else {
-    failure_count = 0;
-    reset_sensor();
-  }
+
+  delay(DELAY_BETWEEN_BURSTS_MS);
 }
 
+dynamic_settings get_settings() {
+  dynamic_settings settings;
+  settings.on = true;
+  settings.threshold = 300;
+  return settings;
+}
 
+void emit_data(int average, int threshold, int failure_count, time_t lap_time) {
+  Serial.println("Average: " + String(average));
+  Serial.println("Threshold: " + String(threshold));
+  Serial.println("Failure count: " + String(failure_count));
+  Serial.println("Lap time: " + String(lap_time) + "s");
+}
 
 //adapted from example Arduino sketch
-int read_adc(){
+int read_adc() {
   // read the analog in value:
   sensorValue = analogRead(analogInPin);
   // map it to the range of the analog out:
@@ -191,25 +208,51 @@ int read_adc(){
   return sensorValue;
 }
 
-void reset_sensor(){
-  digitalWrite(POWER_DUST, HIGH);
-  Serial.println("Resetting Honeywell Sensor..."); 
+void reset_sensor() {
+  Serial.println("Resetting Honeywell Sensor...");
+  stop_sensor();
   delay(3000);
-  digitalWrite(POWER_DUST, LOW);
-  return;
+  start_sensor();
 }
 
-/***************************************************
- * Notes
- * Currently the use of memory is quite inefficient.
- * Floats are not necessarily needed, but were ok
- * in the current case.
- * 
- * To scale this program to do more, delays should
- * be altered, and memory efficiency should be tuned.
- * The method in which circle[] is summed can be made
- * more efficient through additional logic.
- * Additionally, the variables could be static local.
-*****************************************************/
+void stop_sensor() {
+  if (sensor_on) {
+    Serial.println("Powering off Honeywell Sensor...");
+    honeywell.StopParticleMeasurement();
+    delay(100);
+    digitalWrite(POWER_DUST, HIGH);
+    sensor_on = false;
+  }
+}
 
+void start_sensor() {
+  if (!sensor_on) {
+    Serial.println("Powering on Honeywell Sensor...");
+    digitalWrite(POWER_DUST, LOW);
+    delay(100);
+    honeywell.Init();
+    sensor_on = true;
+  }
+}
 
+void init_ethernet() {
+  Serial.println("Initialize Ethernet with DHCP:");
+  if (Ethernet.begin(mac) == 0) {
+    Serial.println("Failed to configure Ethernet using DHCP");
+    // Check for Ethernet hardware present
+    if (Ethernet.hardwareStatus() == EthernetNoHardware) {
+      Serial.println("Ethernet shield was not found.  Sorry, can't run without hardware. :(");
+      while (true) {
+        delay(1);  // do nothing, no point running without Ethernet hardware
+      }
+    }
+    if (Ethernet.linkStatus() == LinkOFF) {
+      Serial.println("Ethernet cable is not connected.");
+    }
+    // try to configure using IP address instead of DHCP:
+    Ethernet.begin(mac, ip, myDns);
+  } else {
+    Serial.print("  DHCP assigned IP ");
+    Serial.println(Ethernet.localIP());
+  }
+}
