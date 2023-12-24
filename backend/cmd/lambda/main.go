@@ -34,8 +34,10 @@ func HandleRequest(ctx context.Context, request events.APIGatewayProxyRequest) (
 		"Access-Control-Allow-Headers": "Content-Type",
 		"Content-Type":                 "application/json",
 	}
-	for k, v := range res.Headers {
-		headers[k] = v
+	if res.Headers != nil {
+		for k, v := range res.Headers {
+			headers[k] = v
+		}
 	}
 	return events.APIGatewayProxyResponse{
 		Body:       res.Body,

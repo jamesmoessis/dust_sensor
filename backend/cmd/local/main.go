@@ -66,6 +66,12 @@ func (h *localHandler) httpHandler(rw http.ResponseWriter, req *http.Request) {
 	rw.Header().Add("Access-Control-Allow-Methods", "GET, PUT")
 	rw.Header().Add("Access-Control-Allow-Headers", "Content-Type")
 	rw.Header().Add("Content-Type", "application/json")
+	if res.Headers != nil {
+		for k, v := range res.Headers {
+			rw.Header().Add(k, v)
+		}
+	}
+
 	rw.WriteHeader(res.Status)
 	rw.Write([]byte(res.Body))
 }
