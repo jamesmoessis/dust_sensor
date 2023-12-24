@@ -13,9 +13,10 @@ import (
 
 func HandleRequest(ctx context.Context, request events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, error) {
 	agnosticReq := &handlers.Request{
-		Path:   request.Path,
-		Body:   request.Body,
-		Method: request.HTTPMethod,
+		Path:    request.Path,
+		Body:    request.Body,
+		Method:  request.HTTPMethod,
+		Headers: request.Headers,
 	}
 	b, _ := json.Marshal(request)
 	fmt.Printf(string(b) + "\n")
@@ -27,15 +28,21 @@ func HandleRequest(ctx context.Context, request events.APIGatewayProxyRequest) (
 	if err != nil {
 		return events.APIGatewayProxyResponse{StatusCode: 500}, err
 	}
+	headers := map[string]string{
+		"Access-Control-Allow-Origin":  "http://dust.jamesmoessis.com",
+		"Access-Control-Allow-Methods": "GET, PUT",
+		"Access-Control-Allow-Headers": "Content-Type",
+		"Content-Type":                 "application/json",
+	}
+	if res.Headers != nil {
+		for k, v := range res.Headers {
+			headers[k] = v
+		}
+	}
 	return events.APIGatewayProxyResponse{
 		Body:       res.Body,
 		StatusCode: res.Status,
-		Headers: map[string]string{
-			"Access-Control-Allow-Origin":  "http://dust.jamesmoessis.com",
-			"Access-Control-Allow-Methods": "GET, PUT",
-			"Access-Control-Allow-Headers": "Content-Type",
-			"Content-Type":                 "application/json",
-		},
+		Headers:    headers,
 	}, nil
 }
 
