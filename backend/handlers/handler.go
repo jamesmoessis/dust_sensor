@@ -2,7 +2,11 @@ package handlers
 
 import (
 	"context"
+	"crypto/sha256"
+	"encoding/base64"
 	"encoding/json"
+	"fmt"
+	"strings"
 )
 
 type Handler struct {
@@ -33,21 +37,47 @@ func (h *Handler) RouterHandler(ctx context.Context, req *Request) (*Response, e
 }
 
 func (h *Handler) updateSettingsHandler(ctx context.Context, req *Request) (*Response, error) {
+	auth, ok := req.Headers["authorization"]
 
-	// Pick a username / password
-	// take echo -n "mypassword" | shasum -a 256
-	// make the code take the password's hash (use the golang sha256 lib)
-	// There should be a header incoming that looks like:
-	// Authorization: Basic mypassword
-	// Then take the sha 256 password hash and compare it to what is in the database.
+	if !ok {
+		fmt.Println("auth header was not found")
+		return &Response{Status: 401, Headers: map[string]string{"WWW-Authenticate": "Basic realm=\"basic\""}}, nil
+	}
 
-	// If it doesn't have the correct password, then it needs to return
-	// a response &Response {Status: 401, Headers: {"WWW-Authenticate": "Basic realm=\"basic\""}}
+	base64Str := strings.TrimPrefix(auth, "Basic")
+	base64Str = strings.TrimSpace(base64Str)
 
-	// Store the hash in a variable at first (and we will put it in the database later, maybe change it)
+	plainAuthBytes, err := base64.StdEncoding.DecodeString(base64Str)
+	plainAuth := string(plainAuthBytes)
+	if err != nil {
+		return &Response{
+				Status:  400,
+				Body:    fmt.Sprintf("invalid base64 in authorization basic header"),
+				Headers: map[string]string{"WWW-Authenticate": "Basic realm=\"basic\""}},
+			err
+	}
 
+	authArr := strings.Split(plainAuth, ":")
+
+	if len(authArr) != 2 {
+		return &Response{Status: 400, Body: fmt.Sprintf("invalid auth"), Headers: map[string]string{"WWW-Authenticate": "Basic realm=\"basic\""}}, nil
+	}
+
+	userName := authArr[0]
+	password := authArr[1]
+
+	hash := sha256.Sum256([]byte(password))
+	hashStr := string(hash[:])
+
+	if hashStr != "e4c2a9780a15923de0c007d1b8ee3ee92a6521673a697a23de1c32a782c47938" ||
+		userName != "tim" {
+		return &Response{
+			Status:  401,
+			Headers: map[string]string{"WWW-Authenticate": "Basic realm=\"basic\""}}, nil
+	}
 	settings := &Settings{}
-	err := json.Unmarshal([]byte(req.Body), settings)
+
+	err = json.Unmarshal([]byte(req.Body), settings)
 	if err != nil {
 		return &Response{Status: 500}, err
 	}
