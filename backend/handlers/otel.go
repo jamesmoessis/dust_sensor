@@ -31,7 +31,6 @@ func NewExporter(ctx context.Context) (metric.Exporter, error) {
 	return otlpmetrichttp.New(ctx,
 		otlpmetrichttp.WithEndpoint(lightStepEndpoint),
 		otlpmetrichttp.WithURLPath(lightStepPath),
-		otlpmetrichttp.WithInsecure(),
 	)
 }
 
