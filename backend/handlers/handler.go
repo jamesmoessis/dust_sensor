@@ -87,7 +87,15 @@ func (h *Handler) allowCorsHandler(ctx context.Context, req *Request) (*Response
 }
 
 func (h *Handler) postMeasurementsHandler(ctx context.Context, req *Request) (*Response, error) {
-	knownValues := []string{"threshold", "average", "failurecount", "laptime", "responsetime"}
+	knownValues := []string{
+		"threshold",
+		"average",
+		"failurecount",
+		"laptime",
+		"responsetime",
+		"maximum",
+		"minimum",
+	}
 
 	for k, v := range req.QueryParams {
 		if stringInSlice(k, knownValues) {

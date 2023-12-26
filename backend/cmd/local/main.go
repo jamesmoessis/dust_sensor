@@ -57,7 +57,15 @@ func (h *localHandler) httpHandler(rw http.ResponseWriter, req *http.Request) {
 		rw.WriteHeader(200)
 		return
 	}
-	knownValues := []string{"threshold", "average", "failurecount", "laptime", "responsetime"}
+	knownValues := []string{
+		"threshold", 
+		"average", 
+		"failurecount", 
+		"laptime", 
+		"responsetime",
+		"maximum",
+		"minimum"
+	}
 
 	queryParams := make(map[string]string)
 	query := req.URL.Query()
