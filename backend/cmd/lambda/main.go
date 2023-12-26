@@ -13,16 +13,31 @@ import (
 
 func HandleRequest(ctx context.Context, request events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, error) {
 	agnosticReq := &handlers.Request{
-		Path:    request.Path,
-		Body:    request.Body,
-		Method:  request.HTTPMethod,
-		Headers: request.Headers,
+		Path:        request.Path,
+		Body:        request.Body,
+		Method:      request.HTTPMethod,
+		Headers:     request.Headers,
+		QueryParams: request.QueryStringParameters,
 	}
 	b, _ := json.Marshal(request)
 	fmt.Printf(string(b) + "\n")
 	ddb := storage.NewDynamoSettingsDb(ctx)
+
+	exporter, err := handlers.NewExporter(ctx)
+	if err != nil {
+		return events.APIGatewayProxyResponse{StatusCode: 500}, err
+	}
+	resource, err := handlers.NewResource("dust_sensor", "v1")
+	if err != nil {
+		return events.APIGatewayProxyResponse{StatusCode: 500}, err
+	}
+
 	handler := handlers.Handler{
 		DB: ddb,
+		Recorder: handlers.Recorder{
+			Resource: *resource,
+			Exporter: exporter,
+		},
 	}
 	res, err := handler.RouterHandler(ctx, agnosticReq)
 	if err != nil {

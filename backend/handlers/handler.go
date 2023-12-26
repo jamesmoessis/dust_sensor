@@ -3,10 +3,13 @@ package handlers
 import (
 	"context"
 	"encoding/json"
+	"fmt"
+	"strconv"
 )
 
 type Handler struct {
 	DB SettingsDB
+	Recorder
 }
 
 func (h *Handler) RouterHandler(ctx context.Context, req *Request) (*Response, error) {
@@ -84,5 +87,34 @@ func (h *Handler) allowCorsHandler(ctx context.Context, req *Request) (*Response
 }
 
 func (h *Handler) postMeasurementsHandler(ctx context.Context, req *Request) (*Response, error) {
-	return &Response{}, nil
+	knownValues := []string{"threshold", "average", "failurecount", "laptime", "responsetime"}
+
+	for k, v := range req.QueryParams {
+		if stringInSlice(k, knownValues) {
+			recording, err := strconv.Atoi(v)
+			if err != nil {
+				return &Response{
+					Status: 400,
+					Body:   fmt.Sprintf("Could not convert measurement to int: %v", err),
+				}, err
+			}
+			err = h.Recorder.RecordIntMetric(k, int64(recording))
+			if err != nil {
+				return &Response{Status: 500}, err
+			}
+		}
+	}
+
+	return &Response{
+		Status: 200,
+	}, nil
+}
+
+func stringInSlice(a string, list []string) bool {
+	for _, b := range list {
+		if b == a {
+			return true
+		}
+	}
+	return false
 }

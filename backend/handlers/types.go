@@ -3,10 +3,11 @@ package handlers
 import "context"
 
 type Request struct {
-	Body    string
-	Method  string
-	Path    string
-	Headers map[string]string
+	Body        string
+	Method      string
+	Path        string
+	Headers     map[string]string
+	QueryParams map[string]string
 }
 
 type Response struct {
