@@ -26,13 +26,22 @@ typedef struct DynamicSettings {
   int threshold;  // between 0 and 1000
 } dynamic_settings;
 
+typedef struct Measurements {
+  int average;
+  int maximum;
+  int minimum;
+  int threshold;
+  int failure_count;
+  time_t lap_time;
+} measurements;
+
 void reset_sensor();
 int read_adc();
-dynamic_settings get_settings();
+void set_settings();
 void init_ethernet();
 void start_sensor();
 void stop_sensor();
-void emit_data(int, int, int, time_t);
+void emit_data(measurements);
 
 // GLOBALS
 time_t t;
@@ -51,9 +60,8 @@ bool sensor_on = false;
 // Newer Ethernet shields have a MAC address printed on a sticker on the shield
 byte mac[] = { 0xDE, 0xAD, 0xBE, 0xEF, 0xFE, 0xED };
 
-// if you don't want to use DNS (and reduce your sketch size)
-// use the numeric IP instead of the name for the server:
-char server[] = "www.google.com";  // name address for Google (using DNS)
+// name address for CloudFront that sits in front of API (using DNS)
+char server[] = "d1d1khgtxr0hea.cloudfront.net";  
 
 // Set the static IP address to use if the DHCP fails to assign
 IPAddress ip(192, 168, 0, 177);
@@ -73,6 +81,8 @@ bool printWebData = true;  // set to false for better speed measurement
 String hostname = "d1d1khgtxr0hea.cloudfront.net";
 String port = "80";
 
+dynamic_settings settings;
+
 void setup() {
   // initialize pins
   pinMode(POWER_DUST, OUTPUT);
@@ -91,20 +101,26 @@ void setup() {
     delay(5000);  // wait 5s for honeywell to connect
   } while (!Serial1);
 
-  //init_ethernet();
+  init_ethernet();
+
+  settings.on = true;
+  settings.threshold = 1000;
 
   Serial.println("Setup func complete!");
 }
 
 
 void loop() {
-  dynamic_settings settings = get_settings();
+  set_settings();
+
+  Serial.println("IsOn: " + String(settings.on));
+  Serial.println("Threshold: " + String(settings.threshold));
 
   if (settings.on) {
     start_sensor();
 
     // Record burst of measurements
-    short dust_levels[BURST_SIZE];
+    int dust_levels[BURST_SIZE];
     int failure_count = 0;
     unsigned int pm2_5, pm10;
     for (int k = 0; k < BURST_SIZE; k++) {
@@ -115,30 +131,47 @@ void loop() {
         Serial.println("PM 10: " + String(pm10) + " ug/m3");
 
         // pm10 is between 0 and 1000
-        dust_levels[k] = (short)pm10;
+        dust_levels[k] = pm10;
         Serial.println("circle[" + String(k) + "] = " + String(dust_levels[k]));
       } else {
         dust_levels[k] = -1;  // indicates a reading which should not be counted
-        failure_count++;      // todo make failure_count non-static and we can emit per burst
+        failure_count++;
       }
-      delay(100);
+      delay(200);
     }
 
-    stop_sensor();
+    //stop_sensor();
+
+    for (int i = 0; i < BURST_SIZE; i++) {
+      Serial.print(String(dust_levels[i]));
+    }
+    Serial.println();
 
     if (failure_count > FAILURE_TOLERANCE * BURST_SIZE) {
       Serial.println("Warning: dust sensor readings failed " + String(failure_count) + " times in the current burst.");
     }
 
+    measurements m;
     int sum = 0;
+    m.maximum = 0;
+    m.minimum = 10000;
+    m.threshold = settings.threshold;
+    m.failure_count = failure_count;
     for (int k = 0; k < BURST_SIZE; k++) {
-      if (dust_levels[k] != -1) {
-        sum += dust_levels[k];
+      int val = dust_levels[k];
+      if (val != -1) {
+        sum += val;
+        if (val > m.maximum) {
+          m.maximum = val;
+        }
+        if (val < m.minimum) {
+          m.minimum = val;
+        }
       }
     }
-    int average = sum / BURST_SIZE;
+    m.average = sum / BURST_SIZE;
 
-    if (average >= settings.threshold) {
+    if (m.average >= settings.threshold) {
       digitalWrite(GREEN_LED, LOW);  // Red Light on
       digitalWrite(FET, HIGH);       // enable alarm
       Serial.println("Threshold Exceeded");
@@ -147,29 +180,119 @@ void loop() {
       digitalWrite(FET, LOW);         // disable alarm
     }
 
-    time_t lap_time = now() - t;
+    m.lap_time = now() - t;
     t = now();  // time in sec since program started
-
-    emit_data(average, settings.threshold, failure_count, lap_time);
+    
+    emit_data(m);
   } else {
-    stop_sensor();
+    //stop_sensor();
   }
 
   delay(DELAY_BETWEEN_BURSTS_MS);
 }
 
-dynamic_settings get_settings() {
-  dynamic_settings settings;
-  settings.on = true;
-  settings.threshold = 300;
-  return settings;
+void set_settings() {
+  if (client.connect(server, 80)) {
+    Serial.print("connected to ");
+    Serial.println(client.remoteIP());
+    // Make a HTTP request:
+    client.println("GET /api/settings HTTP/1.1");
+    client.println("Host: " + String(server));
+    client.println("User-Agent: Arduino");
+    client.println("Connection: close");
+    client.println();
+  } else {
+    // if you didn't get a connection to the server:
+    Serial.println("connection failed");
+    return;
+  }
+
+  bool success = false;
+  String line = "";
+  String first_line = "";
+  while(client.connected()) {
+    line = client.readStringUntil('\n');
+    line.trim();
+    if (success == 0) {
+      first_line = line;
+      if (line.endsWith("200 OK")) {
+        success = true;
+      }
+    }
+  }
+
+  client.stop();
+
+  if (!success) {
+    Serial.println("Response failed. First line: " + first_line);
+    return;
+  } else {
+    Serial.println("Last line (body): " + line);
+  }
+
+  // EXTREMELY janky JSON parsing
+  // Relies on response being all on one line and no whitespace 
+  // (which we can ensure because we have written the backend)
+  // todo make this more clean or use a library if enough memory
+  int start = line.indexOf("isOn\":") + 6;
+  int end = line.indexOf(',');
+  bool isOn = line.substring(start, end).equals("true");
+
+  start = line.indexOf("threshold\":") + 11;
+  end = line.indexOf("}"); // we know threshold is last value
+  int threshold = line.substring(start, end).toInt();
+
+  settings.on = isOn;
+  settings.threshold = threshold;
 }
 
-void emit_data(int average, int threshold, int failure_count, time_t lap_time) {
-  Serial.println("Average: " + String(average));
-  Serial.println("Threshold: " + String(threshold));
-  Serial.println("Failure count: " + String(failure_count));
-  Serial.println("Lap time: " + String(lap_time) + "s");
+void emit_data(measurements m) {
+  if (client.connect(server, 80)) {
+    Serial.print("connected to ");
+    Serial.println(client.remoteIP());
+    String query_string = "average=" + String(m.average) + 
+      "&failurecount=" + String(m.failure_count) + 
+      "&laptime=" + String(m.lap_time) + 
+      "&minimum=" + String(m.minimum) + 
+      "&maximum=" + String(m.maximum) +
+      "&threshold=" + String(m.threshold); 
+
+    
+    // Make a HTTP request:
+    Serial.println("query string: " + query_string);
+    client.println("POST /api/measurements?" + query_string + " HTTP/1.1");
+    client.println("Host: " + String(server));
+    client.println("User-Agent: Arduino");
+    client.println("Connection: close");
+    client.println();
+  } else {
+    // if you didn't get a connection to the server:
+    Serial.println("connection failed");
+    return;
+  }
+
+  bool success = false;
+  String line = "";
+  String first_line = "";
+  while(client.connected()) {
+    line = client.readStringUntil('\n');
+    line.trim();
+    if (success == 0) {
+      first_line = line;
+      if (line.endsWith("200 OK")) {
+        success = true;
+      }
+    }
+  }
+  if (!success) {
+    Serial.println("Failed to report measurements: " + first_line);
+  }
+  Serial.println("Average: " + String(m.average));
+  Serial.println("Max: " + String(m.maximum));
+  Serial.println("Min: " + String(m.minimum));
+  Serial.println("Threshold: " + String(m.threshold));
+  Serial.println("Failure count: " + String(m.failure_count));
+  Serial.println("Lap time: " + String(m.lap_time) + "s");
 }
 
 //adapted from example Arduino sketch
